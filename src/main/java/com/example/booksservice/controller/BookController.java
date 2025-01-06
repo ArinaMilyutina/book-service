@@ -1,6 +1,9 @@
 package com.example.booksservice.controller;
 
 import com.example.booksservice.dto.BookDto;
+import com.example.booksservice.dto.BookRequest;
+import com.example.booksservice.dto.BookResponse;
+import com.example.booksservice.dto.ListBookResponse;
 import com.example.booksservice.entity.Book;
 import com.example.booksservice.exception.BookNotFoundException;
 import com.example.booksservice.feignclient.UserClient;
@@ -26,20 +29,22 @@ public class BookController {
 
     @PreAuthorize(value = "hasRole('ADMIN')")
     @PostMapping("/create")
-    public ResponseEntity<Book> createBook(@Valid @RequestBody BookDto bookDto) {
+    public ResponseEntity<BookResponse> createBook(@Valid @RequestBody BookRequest bookRequest) {
         Long currentUserId = userClient.getCurrentUserId();
-        bookDto.setUserId(currentUserId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(bookService.createBook(bookDto));
+        bookRequest.setUserId(currentUserId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookService.createBook(bookRequest));
     }
 
     @GetMapping("/books")
-    public ResponseEntity<List<Book>> findAll() throws BookNotFoundException {
-        return ResponseEntity.of(Optional.of(bookService.findAll()));
+    public ResponseEntity<ListBookResponse> findAll() throws BookNotFoundException {
+        ListBookResponse response = bookService.findAll();
+        return ResponseEntity.ok(response);
     }
 
+
     @GetMapping("/{id}")
-    public ResponseEntity<Book> findById(@PathVariable Long id) throws BookNotFoundException {
-        Optional<Book> book = bookService.findById(id);
+    public ResponseEntity<BookResponse> findById(@PathVariable Long id) throws BookNotFoundException {
+        Optional<BookResponse> book = bookService.findById(id);
         return book
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -47,8 +52,8 @@ public class BookController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/ISBN/{ISBN}")
-    public ResponseEntity<Book> findByISBN(@PathVariable String ISBN) throws BookNotFoundException {
-        Optional<Book> book = bookService.findByISBN(ISBN);
+    public ResponseEntity<BookResponse> findByISBN(@PathVariable String ISBN) throws BookNotFoundException {
+        Optional<BookResponse> book = bookService.findByISBN(ISBN);
         return book.map(ResponseEntity::ok)
                 .orElseThrow(NoSuchElementException::new);
     }
@@ -61,12 +66,10 @@ public class BookController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/admin/update/{ISBN}")
-    public ResponseEntity<Book> updateByISBN(@PathVariable String ISBN, @Valid @RequestBody BookDto bookDto) throws BookNotFoundException {
+    public ResponseEntity<BookResponse> updateByISBN(@PathVariable String ISBN, @Valid @RequestBody BookRequest bookRequest) throws BookNotFoundException {
         Long currentUserId = userClient.getCurrentUserId();
-        bookDto.setUserId(currentUserId);
-        Book book = bookService.updateBookByISBN(ISBN, bookDto);
-        return ResponseEntity.ok(book);
-
+        bookRequest.setUserId(currentUserId);
+        return ResponseEntity.ok(bookService.updateBookByISBN(ISBN, bookRequest));
     }
 
 }

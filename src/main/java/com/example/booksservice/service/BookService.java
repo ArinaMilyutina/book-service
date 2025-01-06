@@ -1,18 +1,21 @@
 package com.example.booksservice.service;
 
-import com.example.booksservice.dto.BookDto;
+import com.example.booksservice.dto.BookRequest;
+import com.example.booksservice.dto.BookResponse;
+import com.example.booksservice.dto.ListBookResponse;
 import com.example.booksservice.entity.Book;
 import com.example.booksservice.exception.BookAlreadyExistsException;
 import com.example.booksservice.exception.BookNotFoundException;
 import com.example.booksservice.mapper.BookMapper;
 import com.example.booksservice.repository.BookRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BookService {
@@ -26,38 +29,48 @@ public class BookService {
     private final static String DELETE_BOOK_BY_ID = "The book has been deleted.";
 
     @Transactional
-    public Book createBook(BookDto bookDto) {
-        Book book = BookMapper.INSTANCE.bookDtoToBook(bookDto);
+    public BookResponse createBook(BookRequest bookRequest) {
+        Book book = BookMapper.INSTANCE.bookDtoToBook(bookRequest);
         Optional<Book> existingBook = bookRepository.findByISBN(book.getISBN());
         if (existingBook.isPresent()) {
             throw new BookAlreadyExistsException(BOOK_ALREADY_EXISTS);
         }
-        return bookRepository.save(book);
+        bookRepository.save(book);
+
+        return createdBookResponse(book);
     }
 
 
-    public List<Book> findAll() throws BookNotFoundException {
+    public ListBookResponse findAll() throws BookNotFoundException {
         List<Book> bookList = bookRepository.findAll();
         if (bookList.isEmpty()) {
             throw new BookNotFoundException(BOOKS_NOT_FOUND);
         }
-        return bookList;
+        List<BookResponse> bookResponses = bookList.stream()
+                .map(this::createdBookResponse)
+                .collect(Collectors.toList());
+        return ListBookResponse.builder()
+                .responseList(bookResponses)
+                .build();
     }
 
-    public Optional<Book> findById(Long id) throws BookNotFoundException {
-        Optional<Book> book = bookRepository.findById(id);
-        if (book.isEmpty()) {
+
+    public Optional<BookResponse> findById(Long id) throws BookNotFoundException {
+        Optional<Book> optionalBook = bookRepository.findById(id);
+        if (optionalBook.isEmpty()) {
             throw new BookNotFoundException(BOOK_BY_ID);
         }
-        return book;
+        Book book = optionalBook.get();
+        return Optional.ofNullable(createdBookResponse(book));
     }
 
-    public Optional<Book> findByISBN(String ISBN) throws BookNotFoundException {
-        Optional<Book> book = bookRepository.findByISBN(ISBN);
-        if (book.isEmpty()) {
+    public Optional<BookResponse> findByISBN(String ISBN) throws BookNotFoundException {
+        Optional<Book> optionalBook = bookRepository.findByISBN(ISBN);
+        if (optionalBook.isEmpty()) {
             throw new BookNotFoundException(BOOK_BY_ISBN);
         }
-        return book;
+        Book book = optionalBook.get();
+        return Optional.ofNullable(createdBookResponse(book));
     }
 
     @Transactional
@@ -70,17 +83,32 @@ public class BookService {
         return DELETE_BOOK_BY_ID;
     }
 
-    public Book updateBookByISBN(String ISBN, BookDto bookDto) throws BookNotFoundException {
-        try {
-            Optional<Book> byISBN = findByISBN(ISBN);
-            Book book = BookMapper.INSTANCE.bookDtoToBook(bookDto);
-            book.setId(byISBN.get().getId());
-            return bookRepository.save(book);
-        } catch (DataIntegrityViolationException e) {
+    public BookResponse updateBookByISBN(String ISBN, BookRequest bookRequest) throws BookNotFoundException {
+        Optional<Book> optionalBook = bookRepository.findByISBN(ISBN);
+        if (optionalBook.isEmpty()) {
+            throw new BookNotFoundException(BOOK_BY_ISBN);
+        }
+        Book book = BookMapper.INSTANCE.bookDtoToBook(bookRequest);
+        book.setId(optionalBook.get().getId());
+        Optional<Book> existingBook = bookRepository.findByISBN(book.getISBN());
+        if (existingBook.isPresent()) {
             throw new BookAlreadyExistsException(BOOK_ALREADY_EXISTS);
         }
-
+        Book updatedBook = bookRepository.save(book);
+        return createdBookResponse(updatedBook);
     }
+
+    private BookResponse createdBookResponse(Book book) {
+        return BookResponse.builder()
+                .title(book.getTitle())
+                .author(book.getAuthor())
+                .description(book.getDescription())
+                .ISBN(book.getISBN())
+                .genre(book.getGenre())
+                .status(book.getStatus())
+                .build();
+    }
+
 }
 
 
