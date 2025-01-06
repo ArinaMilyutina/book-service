@@ -1,10 +1,8 @@
 package com.example.booksservice.controller;
 
-import com.example.booksservice.dto.BookDto;
 import com.example.booksservice.dto.BookRequest;
 import com.example.booksservice.dto.BookResponse;
 import com.example.booksservice.dto.ListBookResponse;
-import com.example.booksservice.entity.Book;
 import com.example.booksservice.exception.BookNotFoundException;
 import com.example.booksservice.feignclient.UserClient;
 import com.example.booksservice.service.BookService;
@@ -15,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
