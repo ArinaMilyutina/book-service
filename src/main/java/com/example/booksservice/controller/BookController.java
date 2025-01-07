@@ -58,7 +58,8 @@ public class BookController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/delete/{ISBN}")
     public ResponseEntity<String> deleteByISBN(@PathVariable String ISBN) throws BookNotFoundException {
-        return new ResponseEntity<>(bookService.deleteBookByISBN(ISBN), HttpStatus.OK);
+        bookService.deleteBookByISBN(ISBN);
+        return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
