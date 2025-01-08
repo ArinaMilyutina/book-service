@@ -1,5 +1,6 @@
 package com.example.booksservice.controller;
 
+import com.example.booksservice.dto.BookInfoRequest;
 import com.example.booksservice.dto.BookRequest;
 import com.example.booksservice.dto.BookResponse;
 import com.example.booksservice.dto.ListBookResponse;
@@ -34,8 +35,7 @@ public class BookController {
 
     @GetMapping("/books")
     public ResponseEntity<ListBookResponse> findAll() throws BookNotFoundException {
-        ListBookResponse response = bookService.findAll();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(bookService.findAll());
     }
 
 
@@ -70,6 +70,25 @@ public class BookController {
         return ResponseEntity.ok(bookService.updateBookByISBN(ISBN, bookRequest));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/find-by-id/{id}")
+    public ResponseEntity<BookInfoRequest> takeTheBook(@PathVariable Long id) throws BookNotFoundException {
+        return ResponseEntity.ok(bookService.takeTheBook(id));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/status/{id}")
+    public ResponseEntity<Void> updateBookStatus(@PathVariable Long id) {
+        bookService.updateBookStatus(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/available-books")
+    public ResponseEntity<ListBookResponse> availableBooks() {
+        return ResponseEntity.ok(bookService.availableBooks());
+    }
+
 }
+
 
 
