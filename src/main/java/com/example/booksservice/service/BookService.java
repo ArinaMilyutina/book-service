@@ -1,9 +1,11 @@
 package com.example.booksservice.service;
 
+import com.example.booksservice.dto.BookInfoRequest;
 import com.example.booksservice.dto.BookRequest;
 import com.example.booksservice.dto.BookResponse;
 import com.example.booksservice.dto.ListBookResponse;
 import com.example.booksservice.entity.Book;
+import com.example.booksservice.entity.Status;
 import com.example.booksservice.exception.BookAlreadyExistsException;
 import com.example.booksservice.exception.BookNotFoundException;
 import com.example.booksservice.mapper.BookMapper;
@@ -12,9 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +27,7 @@ public class BookService {
 
     private final static String BOOK_BY_ISBN = "A book with isbn not found.";
     private final static String DELETE_BOOK_BY_ID = "The book has been deleted.";
+    private final static String AVAILABLE_BOOKS = "There are no available books!";
 
     @Transactional
     public BookResponse createBook(BookRequest bookRequest) {
@@ -46,12 +47,7 @@ public class BookService {
         if (bookList.isEmpty()) {
             throw new BookNotFoundException(BOOKS_NOT_FOUND);
         }
-        List<BookResponse> bookResponses = bookList.stream()
-                .map(this::createdBookResponse)
-                .collect(Collectors.toList());
-        return ListBookResponse.builder()
-                .responseList(bookResponses)
-                .build();
+        return createListBookResponse(bookList);
     }
 
 
@@ -71,6 +67,19 @@ public class BookService {
         }
         Book book = optionalBook.get();
         return Optional.ofNullable(createdBookResponse(book));
+    }
+
+    public BookInfoRequest takeTheBook(Long id) throws BookNotFoundException {
+        Optional<Book> optionalBook = bookRepository.findById(id);
+        if (optionalBook.isEmpty()) {
+            throw new BookNotFoundException(BOOK_BY_ISBN);
+        }
+        Book book = optionalBook.get();
+        return BookInfoRequest.builder()
+                .bookId(book.getId())
+                .title(book.getTitle())
+                .status(book.getStatus())
+                .build();
     }
 
     @Transactional
@@ -98,6 +107,27 @@ public class BookService {
         return createdBookResponse(updatedBook);
     }
 
+    public void updateBookStatus(Long id) {
+        Optional<Book> optionalBook = bookRepository.findById(id);
+        Book book = optionalBook.get();
+        Set<Status> newStatusSet = new HashSet<>();
+        if (book.getStatus().contains(Status.AVAILABLE)) {
+            newStatusSet.add(Status.UNAVAILABLE);
+        } else {
+            newStatusSet.add(Status.AVAILABLE);
+        }
+        book.setStatus(newStatusSet);
+        bookRepository.save(book);
+    }
+
+    public ListBookResponse availableBooks() {
+        List<Book> bookList = bookRepository.findByStatusContaining(Status.AVAILABLE);
+        if (bookList.isEmpty()) {
+            throw new BookNotFoundException(AVAILABLE_BOOKS);
+        }
+        return createListBookResponse(bookList);
+    }
+
     private BookResponse createdBookResponse(Book book) {
         return BookResponse.builder()
                 .title(book.getTitle())
@@ -109,6 +139,12 @@ public class BookService {
                 .build();
     }
 
+    private ListBookResponse createListBookResponse(List<Book> bookList) {
+        List<BookResponse> bookResponses = bookList.stream()
+                .map(this::createdBookResponse)
+                .collect(Collectors.toList());
+        return ListBookResponse.builder().responseList(bookResponses).build();
+    }
 }
 
 
