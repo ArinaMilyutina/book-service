@@ -3,6 +3,7 @@ package com.example.booksservice.entity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 
@@ -29,10 +30,10 @@ public class Book {
     @Enumerated(EnumType.STRING)
     private Set<Genre> genre;
     @Enumerated(EnumType.STRING)
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "book_status", schema = "book_service_schema", joinColumns = @JoinColumn(name = "book_id"))
     @Column(name = "status", nullable = false)
-    private Set<Status> status;
+    private Set<Status> status=new HashSet<>();
     @Column(name = "admin_id")
     private Long userId;
 }
