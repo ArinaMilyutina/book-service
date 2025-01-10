@@ -1,6 +1,5 @@
-package com.example.booksservice.controller;
+package com.example.booksservice.controller.internal;
 
-import com.example.booksservice.dto.BookInfoRequest;
 import com.example.booksservice.dto.BookRequest;
 import com.example.booksservice.dto.BookResponse;
 import com.example.booksservice.dto.ListBookResponse;
@@ -19,7 +18,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/book")
-public class BookController {
+public class InternalBookController {
     @Autowired
     private BookService bookService;
     @Autowired
@@ -68,19 +67,6 @@ public class BookController {
         Long currentUserId = userClient.getCurrentUserId();
         bookRequest.setUserId(currentUserId);
         return ResponseEntity.ok(bookService.updateBookByISBN(ISBN, bookRequest));
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/find-by-id/{id}")
-    public ResponseEntity<BookInfoRequest> takeTheBook(@PathVariable Long id) throws BookNotFoundException {
-        return ResponseEntity.ok(bookService.takeTheBook(id));
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/status/{id}")
-    public ResponseEntity<Void> updateBookStatus(@PathVariable Long id) {
-        bookService.updateBookStatus(id);
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/available-books")
