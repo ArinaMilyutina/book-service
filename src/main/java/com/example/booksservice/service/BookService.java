@@ -83,13 +83,12 @@ public class BookService {
     }
 
     @Transactional
-    public String deleteBookByISBN(String ISBN) throws BookNotFoundException {
+    public void deleteBookByISBN(String ISBN) throws BookNotFoundException {
         Optional<Book> book = bookRepository.findByISBN(ISBN);
         if (book.isEmpty()) {
             throw new BookNotFoundException(BOOKS_NOT_FOUND);
         }
         bookRepository.deleteByISBN(ISBN);
-        return DELETE_BOOK_BY_ID;
     }
 
     public BookResponse updateBookByISBN(String ISBN, BookRequest bookRequest) throws BookNotFoundException {
