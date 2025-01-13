@@ -1,6 +1,7 @@
 networks:
   my-network:
     driver: bridge
+
 services:
   postgres:
     image: postgres:14
@@ -13,7 +14,7 @@ services:
     networks:
       - my-network
 
-  book-service:
+  app:
     build: .
     ports:
       - "8082:8082"
@@ -33,4 +34,3 @@ services:
       SPRING_FLYWAY_LOCATIONS: classpath:db.migration
     networks:
       - my-network
-
